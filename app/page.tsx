@@ -1,65 +1,158 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { z } from "zod";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { Eye, EyeOff } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+
+import { FullTextCyanTextIcon } from "@/components/icons";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { signIn, useSession } from "@/lib/auth-client";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldSet,
+} from "@/components/ui/field";
+
+const signInSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+type SignInForm = z.infer<typeof signInSchema>;
+
+export default function SignInPage() {
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const { data: session } = useSession();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignInForm>({
+    resolver: zodResolver(signInSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  // Redirect if already authenticated
+  if (session) {
+    router.push("/dashboard");
+    return null;
+  }
+
+  const onSubmit = async (data: SignInForm) => {
+    setLoading(true);
+    try {
+      const result = await signIn.email({
+        email: data.email,
+        password: data.password,
+      });
+
+      if (result.error) {
+        toast.error(result.error.message || "Failed to sign in");
+      } else {
+        toast.success("Signed in successfully!");
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      console.error("Sign in exception:", error);
+      toast.error("An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="min-h-dvh bg-gradient-to-br from-[#155E63] to-[#0f4a4e] flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <Card className="shadow-2xl border-0">
+          <CardHeader className="text-center pb-8">
+            <div className="flex justify-center items-center mb-4">
+              <FullTextCyanTextIcon className="h-auto" />
+            </div>
+
+            <CardTitle className="text-2xl font-rg-standard-book font-semibold text-[#155E63]">
+              Afrique Bitcoin Admin
+            </CardTitle>
+            <CardDescription className="text-gray-600">
+              Sign in to manage the conference portal
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <FieldSet className="gap-6">
+                <FieldGroup>
+                  <Field data-invalid={!!errors.email}>
+                    <FieldLabel className="text-[#155E63]">
+                      Email Address
+                    </FieldLabel>
+                    <Input
+                      type="email"
+                      placeholder="admin@afriquebitcoin.com"
+                      className="border-gray-300 focus:border-[#155E63] focus:ring-[#155E63]"
+                      {...register("email")}
+                    />
+                    <FieldError>{errors.email?.message}</FieldError>
+                  </Field>
+
+                  <Field data-invalid={!!errors.password}>
+                    <FieldLabel className="text-[#155E63]">Password</FieldLabel>
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter your password"
+                        className="border-gray-300 focus:border-[#155E63] focus:ring-[#155E63] pr-10"
+                        {...register("password")}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4 text-gray-400" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-gray-400" />
+                        )}
+                      </Button>
+                    </div>
+                    <FieldError>{errors.password?.message}</FieldError>
+                  </Field>
+                </FieldGroup>
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-[#155E63] hover:bg-[#0f4a4e] text-white py-2.5"
+                >
+                  {loading ? "Signing in..." : "Sign In"}
+                </Button>
+              </FieldSet>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

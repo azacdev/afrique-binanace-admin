@@ -69,8 +69,7 @@ function getAllowedOrigin(request: NextRequest): string {
   const allowedOrigins = [
     "http://localhost:3000",
     "http://localhost:3001",
-    "http://localhost:3002",
-    // Add production URLs here
+    "https://afrique-bitcoin.vercel.app",
   ];
 
   if (origin && allowedOrigins.includes(origin)) {

@@ -4,12 +4,12 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { db } from "@/db/drizzle";
-import { tickets } from "@/db/schema";
+import { schedules } from "@/db/schema";
 
-// GET single ticket by ID (protected)
+// GET single schedule by ID (protected)
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth.api.getSession({
@@ -22,30 +22,33 @@ export async function GET(
 
     const { id } = await params;
 
-    const [ticket] = await db
+    const [schedule] = await db
       .select()
-      .from(tickets)
-      .where(eq(tickets.id, id))
+      .from(schedules)
+      .where(eq(schedules.id, id))
       .limit(1);
 
-    if (!ticket) {
-      return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
+    if (!schedule) {
+      return NextResponse.json(
+        { error: "Schedule not found" },
+        { status: 404 },
+      );
     }
 
-    return NextResponse.json({ ticket });
+    return NextResponse.json({ schedule });
   } catch (error) {
-    console.error("Error fetching ticket:", error);
+    console.error("Error fetching schedule:", error);
     return NextResponse.json(
-      { error: "Failed to fetch ticket" },
-      { status: 500 }
+      { error: "Failed to fetch schedule" },
+      { status: 500 },
     );
   }
 }
 
-// PUT update ticket by ID (protected)
+// PUT update schedule by ID (protected)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth.api.getSession({
@@ -59,8 +62,8 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    const [ticket] = await db
-      .update(tickets)
+    const [schedule] = await db
+      .update(schedules)
       .set({
         startTime: body.startTime,
         endTime: body.endTime,
@@ -70,31 +73,33 @@ export async function PUT(
         speaker: body.speaker,
         duration: body.duration,
         focus: body.focus,
-        link: body.link,
         isActive: body.isActive,
         updatedAt: new Date(),
       })
-      .where(eq(tickets.id, id))
+      .where(eq(schedules.id, id))
       .returning();
 
-    if (!ticket) {
-      return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
+    if (!schedule) {
+      return NextResponse.json(
+        { error: "Schedule not found" },
+        { status: 404 },
+      );
     }
 
-    return NextResponse.json({ ticket });
+    return NextResponse.json({ schedule });
   } catch (error) {
-    console.error("Error updating ticket:", error);
+    console.error("Error updating schedule:", error);
     return NextResponse.json(
-      { error: "Failed to update ticket" },
-      { status: 500 }
+      { error: "Failed to update schedule" },
+      { status: 500 },
     );
   }
 }
 
-// DELETE ticket by ID (protected)
+// DELETE schedule by ID (protected)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth.api.getSession({
@@ -107,21 +112,24 @@ export async function DELETE(
 
     const { id } = await params;
 
-    const [deletedTicket] = await db
-      .delete(tickets)
-      .where(eq(tickets.id, id))
+    const [deletedSchedule] = await db
+      .delete(schedules)
+      .where(eq(schedules.id, id))
       .returning();
 
-    if (!deletedTicket) {
-      return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
+    if (!deletedSchedule) {
+      return NextResponse.json(
+        { error: "Schedule not found" },
+        { status: 404 },
+      );
     }
 
-    return NextResponse.json({ message: "Ticket deleted successfully" });
+    return NextResponse.json({ message: "Schedule deleted successfully" });
   } catch (error) {
-    console.error("Error deleting ticket:", error);
+    console.error("Error deleting schedule:", error);
     return NextResponse.json(
-      { error: "Failed to delete ticket" },
-      { status: 500 }
+      { error: "Failed to delete schedule" },
+      { status: 500 },
     );
   }
 }

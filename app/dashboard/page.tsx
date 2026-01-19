@@ -3,18 +3,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Ticket, Calendar, Users, ArrowRight } from "lucide-react";
+import { Calendar, CalendarDays, Users, ArrowRight } from "lucide-react";
 
 interface DashboardStats {
-  totalTickets: number;
-  activeTickets: number;
+  totalSchedules: number;
+  activeSchedules: number;
   upcomingSessions: number;
 }
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats>({
-    totalTickets: 0,
-    activeTickets: 0,
+    totalSchedules: 0,
+    activeSchedules: 0,
     upcomingSessions: 0,
   });
   const [loading, setLoading] = useState(true);
@@ -22,16 +22,16 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const response = await fetch("/api/tickets");
+        const response = await fetch("/api/schedules");
         if (response.ok) {
           const data = await response.json();
-          const tickets = data.tickets || [];
+          const schedules = data.schedules || [];
           setStats({
-            totalTickets: tickets.length,
-            activeTickets: tickets.filter(
-              (t: { isActive: boolean }) => t.isActive,
+            totalSchedules: schedules.length,
+            activeSchedules: schedules.filter(
+              (s: { isActive: boolean }) => s.isActive,
             ).length,
-            upcomingSessions: tickets.length,
+            upcomingSessions: schedules.length,
           });
         }
       } catch (error) {
@@ -45,16 +45,16 @@ export default function DashboardPage() {
 
   const statCards = [
     {
-      title: "Total Tickets",
-      value: stats.totalTickets,
-      icon: Ticket,
+      title: "Total Schedules",
+      value: stats.totalSchedules,
+      icon: Calendar,
       gradient: "from-[#155E63] to-[#0f4a4e]",
       iconBg: "bg-white/20",
     },
     {
-      title: "Active Tickets",
-      value: stats.activeTickets,
-      icon: Calendar,
+      title: "Active Schedules",
+      value: stats.activeSchedules,
+      icon: CalendarDays,
       gradient: "from-[#6CBF6D] to-[#4aa84a]",
       iconBg: "bg-white/20",
     },
@@ -111,20 +111,20 @@ export default function DashboardPage() {
         <Card className="bg-white border border-[#e5e5e0] shadow-sm hover:shadow-md transition-shadow">
           <CardHeader>
             <CardTitle className="font-rg-standard-book text-[#155E63] flex items-center gap-2">
-              <Ticket className="w-5 h-5" />
-              Manage Tickets
+              <Calendar className="w-5 h-5" />
+              Manage Schedules
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-[#337875] text-sm">
-              Create, edit, and organize conference tickets. Add speakers, set
+              Create, edit, and organize conference schedules. Add speakers, set
               times, and manage the schedule.
             </p>
             <Link
-              href="/dashboard/tickets"
+              href="/dashboard/schedules"
               className="inline-flex items-center gap-2 text-[#155E63] font-medium text-sm hover:text-[#0f4a4e] transition-colors"
             >
-              Go to Tickets
+              Go to Schedules
               <ArrowRight className="w-4 h-4" />
             </Link>
           </CardContent>

@@ -4,7 +4,7 @@ import type React from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Settings, LogOut, Home, Ticket } from "lucide-react";
+import { Settings, LogOut, Home, CalendarDays } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { LogoIcon } from "@/components/icons";
+import { signOut } from "@/lib/auth-client";
 
 const sidebarItems = [
   {
@@ -32,9 +33,9 @@ const sidebarItems = [
     icon: Home,
   },
   {
-    title: "Tickets",
-    href: "/dashboard/tickets",
-    icon: Ticket,
+    title: "Schedules",
+    href: "/dashboard/schedules",
+    icon: CalendarDays,
   },
   {
     title: "Settings",
@@ -52,13 +53,14 @@ export function DashboardSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      const response = await fetch("/api/auth/sign-out", {
-        method: "POST",
+      await signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            router.push("/");
+            router.refresh();
+          },
+        },
       });
-      if (response.ok) {
-        router.push("/");
-        router.refresh();
-      }
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
@@ -154,7 +156,7 @@ export function DashboardSidebar(props: React.ComponentProps<typeof Sidebar>) {
               need to sign in again to access the dashboard.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-2">
             <Button
               variant="outline"
               onClick={() => setShowLogoutDialog(false)}

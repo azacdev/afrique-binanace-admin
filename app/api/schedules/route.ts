@@ -4,9 +4,9 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { db } from "@/db/drizzle";
-import { tickets } from "@/db/schema";
+import { schedules } from "@/db/schema";
 
-// GET all tickets (protected - admin only)
+// GET all schedules (protected - admin only)
 export async function GET() {
   try {
     const session = await auth.api.getSession({
@@ -17,22 +17,22 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const allTickets = await db
+    const allSchedules = await db
       .select()
-      .from(tickets)
-      .orderBy(desc(tickets.createdAt));
+      .from(schedules)
+      .orderBy(desc(schedules.createdAt));
 
-    return NextResponse.json({ tickets: allTickets });
+    return NextResponse.json({ schedules: allSchedules });
   } catch (error) {
-    console.error("Error fetching tickets:", error);
+    console.error("Error fetching schedules:", error);
     return NextResponse.json(
-      { error: "Failed to fetch tickets" },
-      { status: 500 }
+      { error: "Failed to fetch schedules" },
+      { status: 500 },
     );
   }
 }
 
-// POST create new ticket (protected - admin only)
+// POST create new schedule (protected - admin only)
 export async function POST(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
@@ -45,8 +45,8 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    const [ticket] = await db
-      .insert(tickets)
+    const [schedule] = await db
+      .insert(schedules)
       .values({
         startTime: body.startTime,
         endTime: body.endTime,
@@ -56,17 +56,16 @@ export async function POST(request: NextRequest) {
         speaker: body.speaker || null,
         duration: body.duration,
         focus: body.focus || null,
-        link: body.link,
         isActive: body.isActive ?? true,
       })
       .returning();
 
-    return NextResponse.json({ ticket });
+    return NextResponse.json({ schedule });
   } catch (error) {
-    console.error("Error creating ticket:", error);
+    console.error("Error creating schedule:", error);
     return NextResponse.json(
-      { error: "Failed to create ticket" },
-      { status: 500 }
+      { error: "Failed to create schedule" },
+      { status: 500 },
     );
   }
 }

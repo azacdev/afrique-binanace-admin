@@ -1,18 +1,15 @@
 import { pgTable, text, timestamp, boolean, uuid } from "drizzle-orm/pg-core";
 
-// Tickets/Schedule Schema (from schedule-list.tsx)
-// Type is text so users can add any session type (e.g., "REGISTRATION", "KEYNOTE", "PANEL", etc.)
-export const tickets = pgTable("tickets", {
+export const schedules = pgTable("schedules", {
   id: uuid("id").defaultRandom().primaryKey(),
   startTime: text("start_time").notNull(),
   endTime: text("end_time").notNull(),
-  type: text("type").notNull(), // Flexible text field for any session type
+  type: text("type").notNull(),
   title: text("title").notNull(),
   description: text("description").notNull(),
   speaker: text("speaker"),
   duration: text("duration").notNull(),
   focus: text("focus"),
-  link: text("link").notNull(), // Required link for session details/registration/speaker page
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

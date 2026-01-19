@@ -22,9 +22,9 @@ function hashPassword(password: string): string {
 }
 
 async function seed() {
-  const email = "admin@afriquebitcoin.com";
-  const password = "Admin123!";
-  const name = "Admin";
+  const email = "azacdev@gmail.com";
+  const password = "password123";
+  const name = "azacdev";
 
   console.log("Creating first admin user...");
 
@@ -47,7 +47,7 @@ async function seed() {
 
   console.log(
     "Hash format (salt:hash):",
-    hashedPassword.substring(0, 50) + "..."
+    hashedPassword.substring(0, 50) + "...",
   );
 
   // Create user

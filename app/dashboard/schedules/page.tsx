@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -23,10 +23,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { TicketFormDialog } from "@/components/dashboard/ticket-form-dialog";
+import { ScheduleSheet } from "@/components/dashboard/schedule-sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 
-interface Ticket {
+interface Schedule {
   id: string;
   startTime: string;
   endTime: string;
@@ -36,58 +36,57 @@ interface Ticket {
   speaker: string | null;
   duration: string;
   focus: string | null;
-  link: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-export default function TicketsPage() {
-  const [tickets, setTickets] = useState<Ticket[]>([]);
+export default function SchedulesPage() {
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
-  const [deleteTicket, setDeleteTicket] = useState<Ticket | null>(null);
+  const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
+  const [deleteSchedule, setDeleteSchedule] = useState<Schedule | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const fetchTickets = async () => {
+  const fetchSchedules = async () => {
     try {
-      const response = await fetch("/api/tickets");
+      const response = await fetch("/api/schedules");
       if (response.ok) {
         const data = await response.json();
-        setTickets(data.tickets || []);
+        setSchedules(data.schedules || []);
       }
     } catch (error) {
-      console.error("Error fetching tickets:", error);
-      toast.error("Failed to fetch tickets");
+      console.error("Error fetching schedules:", error);
+      toast.error("Failed to fetch schedules");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchTickets();
+    fetchSchedules();
   }, []);
 
   const handleDelete = async () => {
-    if (!deleteTicket) return;
+    if (!deleteSchedule) return;
 
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/tickets/${deleteTicket.id}`, {
+      const response = await fetch(`/api/schedules/${deleteSchedule.id}`, {
         method: "DELETE",
       });
 
       if (response.ok) {
-        toast.success("Ticket deleted successfully");
-        setDeleteTicket(null);
-        fetchTickets();
+        toast.success("Schedule deleted successfully");
+        setDeleteSchedule(null);
+        fetchSchedules();
       } else {
-        toast.error("Failed to delete ticket");
+        toast.error("Failed to delete schedule");
       }
     } catch (error) {
-      console.error("Error deleting ticket:", error);
-      toast.error("Failed to delete ticket");
+      console.error("Error deleting schedule:", error);
+      toast.error("Failed to delete schedule");
     } finally {
       setIsDeleting(false);
     }
@@ -95,15 +94,15 @@ export default function TicketsPage() {
 
   const handleFormSuccess = () => {
     setIsFormOpen(false);
-    setEditingTicket(null);
-    fetchTickets();
+    setEditingSchedule(null);
+    fetchSchedules();
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-[#155E63]">Tickets</h1>
+          <h1 className="text-3xl font-bold text-[#155E63]">Schedules</h1>
           <p className="text-gray-600 mt-1">
             Manage conference sessions and schedule
           </p>
@@ -113,13 +112,13 @@ export default function TicketsPage() {
           className="bg-[#155E63] hover:bg-[#0f4a4e] text-white"
         >
           <Plus className="w-4 h-4 mr-2" />
-          Add Ticket
+          Add Schedule
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-[#155E63]">All Tickets</CardTitle>
+          <CardTitle className="text-[#155E63]">All Schedules</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -169,9 +168,9 @@ export default function TicketsPage() {
                 ))}
               </TableBody>
             </Table>
-          ) : tickets.length === 0 ? (
+          ) : schedules.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              No tickets found. Create your first ticket!
+              No schedules found. Create your first schedule!
             </div>
           ) : (
             <Table>
@@ -186,13 +185,13 @@ export default function TicketsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {tickets.map((ticket) => (
-                  <TableRow key={ticket.id}>
+                {schedules.map((schedule) => (
+                  <TableRow key={schedule.id}>
                     <TableCell className="font-medium">
                       <div>
-                        <p className="text-[#155E63]">{ticket.title}</p>
+                        <p className="text-[#155E63]">{schedule.title}</p>
                         <p className="text-sm text-gray-500 truncate max-w-xs">
-                          {ticket.description}
+                          {schedule.description}
                         </p>
                       </div>
                     </TableCell>
@@ -201,28 +200,28 @@ export default function TicketsPage() {
                         variant="outline"
                         className="bg-[#155E63]/10 text-[#155E63] border-[#155E63]/30"
                       >
-                        {ticket.type}
+                        {schedule.type}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm">
                       <div>
                         <p>
-                          {ticket.startTime} - {ticket.endTime}
+                          {schedule.startTime} - {schedule.endTime}
                         </p>
-                        <p className="text-gray-500">{ticket.duration}</p>
+                        <p className="text-gray-500">{schedule.duration}</p>
                       </div>
                     </TableCell>
-                    <TableCell>{ticket.speaker || "-"}</TableCell>
+                    <TableCell>{schedule.speaker || "-"}</TableCell>
                     <TableCell>
                       <Badge
-                        variant={ticket.isActive ? "default" : "secondary"}
+                        variant={schedule.isActive ? "default" : "secondary"}
                         className={
-                          ticket.isActive
+                          schedule.isActive
                             ? "bg-[#6CBF6D] text-white"
                             : "bg-gray-200 text-gray-600"
                         }
                       >
-                        {ticket.isActive ? "Active" : "Inactive"}
+                        {schedule.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -230,16 +229,8 @@ export default function TicketsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => window.open(ticket.link, "_blank")}
-                          className="text-gray-500 hover:text-[#155E63]"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
                           onClick={() => {
-                            setEditingTicket(ticket);
+                            setEditingSchedule(schedule);
                             setIsFormOpen(true);
                           }}
                           className="text-gray-500 hover:text-[#155E63]"
@@ -249,7 +240,7 @@ export default function TicketsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setDeleteTicket(ticket)}
+                          onClick={() => setDeleteSchedule(schedule)}
                           className="text-gray-500 hover:text-red-600"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -265,30 +256,33 @@ export default function TicketsPage() {
       </Card>
 
       {/* Create/Edit Form Dialog */}
-      <TicketFormDialog
+      <ScheduleSheet
         open={isFormOpen}
         onOpenChange={(open) => {
           setIsFormOpen(open);
-          if (!open) setEditingTicket(null);
+          if (!open) setEditingSchedule(null);
         }}
-        ticket={editingTicket}
+        schedule={editingSchedule}
         onSuccess={handleFormSuccess}
       />
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={!!deleteTicket} onOpenChange={() => setDeleteTicket(null)}>
+      <Dialog
+        open={!!deleteSchedule}
+        onOpenChange={() => setDeleteSchedule(null)}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-red-600">Delete Ticket</DialogTitle>
+            <DialogTitle className="text-red-600">Delete Schedule</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{deleteTicket?.title}"? This
+              Are you sure you want to delete "{deleteSchedule?.title}"? This
               action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
             <Button
               variant="outline"
-              onClick={() => setDeleteTicket(null)}
+              onClick={() => setDeleteSchedule(null)}
               disabled={isDeleting}
             >
               Cancel

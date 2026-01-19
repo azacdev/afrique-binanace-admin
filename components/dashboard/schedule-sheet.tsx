@@ -2,7 +2,6 @@
 
 import { z } from "zod";
 import { toast } from "sonner";
-import { X } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,22 +25,49 @@ import {
   FieldSet,
 } from "@/components/ui/field";
 
-const ticketSchema = z.object({
+// Helper function to calculate duration from start and end time
+function calculateDuration(startTime: string, endTime: string): string {
+  if (!startTime || !endTime) return "";
+
+  const [startHours, startMinutes] = startTime.split(":").map(Number);
+  const [endHours, endMinutes] = endTime.split(":").map(Number);
+
+  let startTotalMinutes = startHours * 60 + startMinutes;
+  let endTotalMinutes = endHours * 60 + endMinutes;
+
+  // Handle overnight sessions (e.g., 22:00 - 02:00)
+  if (endTotalMinutes < startTotalMinutes) {
+    endTotalMinutes += 24 * 60;
+  }
+
+  const durationMinutes = endTotalMinutes - startTotalMinutes;
+
+  if (durationMinutes < 60) {
+    return `${durationMinutes} MIN`;
+  } else if (durationMinutes % 60 === 0) {
+    const hours = durationMinutes / 60;
+    return hours === 1 ? "1 HOUR" : `${hours} HOURS`;
+  } else {
+    const hours = Math.floor(durationMinutes / 60);
+    const minutes = durationMinutes % 60;
+    return `${hours}H ${minutes}M`;
+  }
+}
+
+const scheduleSchema = z.object({
   startTime: z.string().min(1, "Start time is required"),
   endTime: z.string().min(1, "End time is required"),
   type: z.string().min(1, "Type is required"),
   title: z.string().min(1, "Title is required"),
   description: z.string().min(1, "Description is required"),
   speaker: z.string().optional(),
-  duration: z.string().min(1, "Duration is required"),
   focus: z.string().optional(),
-  link: z.string().url("Must be a valid URL"),
   isActive: z.boolean(),
 });
 
-type TicketFormData = z.infer<typeof ticketSchema>;
+type ScheduleFormData = z.infer<typeof scheduleSchema>;
 
-interface Ticket {
+interface Schedule {
   id: string;
   startTime: string;
   endTime: string;
@@ -51,24 +77,23 @@ interface Ticket {
   speaker: string | null;
   duration: string;
   focus: string | null;
-  link: string;
   isActive: boolean;
 }
 
-interface TicketFormDialogProps {
+interface ScheduleSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  ticket: Ticket | null;
+  schedule: Schedule | null;
   onSuccess: () => void;
 }
 
-export function TicketFormDialog({
+export function ScheduleSheet({
   open,
   onOpenChange,
-  ticket,
+  schedule,
   onSuccess,
-}: TicketFormDialogProps) {
-  const isEditing = !!ticket;
+}: ScheduleSheetProps) {
+  const isEditing = !!schedule;
 
   const {
     register,
@@ -77,8 +102,8 @@ export function TicketFormDialog({
     reset,
     setValue,
     watch,
-  } = useForm<TicketFormData>({
-    resolver: zodResolver(ticketSchema),
+  } = useForm<ScheduleFormData>({
+    resolver: zodResolver(scheduleSchema),
     defaultValues: {
       startTime: "",
       endTime: "",
@@ -86,28 +111,27 @@ export function TicketFormDialog({
       title: "",
       description: "",
       speaker: "",
-      duration: "",
       focus: "",
-      link: "",
       isActive: true,
     },
   });
 
   const isActive = watch("isActive");
+  const startTime = watch("startTime");
+  const endTime = watch("endTime");
+  const calculatedDuration = calculateDuration(startTime, endTime);
 
   useEffect(() => {
-    if (ticket) {
+    if (schedule) {
       reset({
-        startTime: ticket.startTime,
-        endTime: ticket.endTime,
-        type: ticket.type,
-        title: ticket.title,
-        description: ticket.description,
-        speaker: ticket.speaker || "",
-        duration: ticket.duration,
-        focus: ticket.focus || "",
-        link: ticket.link,
-        isActive: ticket.isActive,
+        startTime: schedule.startTime,
+        endTime: schedule.endTime,
+        type: schedule.type,
+        title: schedule.title,
+        description: schedule.description,
+        speaker: schedule.speaker || "",
+        focus: schedule.focus || "",
+        isActive: schedule.isActive,
       });
     } else {
       reset({
@@ -117,17 +141,25 @@ export function TicketFormDialog({
         title: "",
         description: "",
         speaker: "",
-        duration: "",
         focus: "",
-        link: "",
         isActive: true,
       });
     }
-  }, [ticket, reset]);
+  }, [schedule, reset]);
 
-  const onSubmit = async (data: TicketFormData) => {
+  const onSubmit = async (data: ScheduleFormData) => {
+    // Calculate duration from start and end time
+    const duration = calculateDuration(data.startTime, data.endTime);
+
+    if (!duration) {
+      toast.error("Please ensure both start and end times are valid");
+      return;
+    }
+
     try {
-      const url = isEditing ? `/api/tickets/${ticket.id}` : "/api/tickets";
+      const url = isEditing
+        ? `/api/schedules/${schedule.id}`
+        : "/api/schedules";
       const method = isEditing ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -135,6 +167,7 @@ export function TicketFormDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
+          duration,
           speaker: data.speaker || null,
           focus: data.focus || null,
         }),
@@ -143,17 +176,17 @@ export function TicketFormDialog({
       if (response.ok) {
         toast.success(
           isEditing
-            ? "Ticket updated successfully"
-            : "Ticket created successfully",
+            ? "Schedule updated successfully"
+            : "Schedule created successfully",
         );
         onSuccess();
       } else {
         const errorData = await response.json();
-        toast.error(errorData.error || "Failed to save ticket");
+        toast.error(errorData.error || "Failed to save schedule");
       }
     } catch (error) {
-      console.error("Error saving ticket:", error);
-      toast.error("Failed to save ticket");
+      console.error("Error saving schedule:", error);
+      toast.error("Failed to save schedule");
     }
   };
 
@@ -163,13 +196,13 @@ export function TicketFormDialog({
         <SheetHeader className="space-y-1 pb-6 border-b border-[#e5e5e0]">
           <div className="flex items-center justify-between">
             <SheetTitle className="font-rg-standard-book text-xl text-[#155E63]">
-              {isEditing ? "Edit Ticket" : "Create Ticket"}
+              {isEditing ? "Edit Schedule" : "Create Schedule"}
             </SheetTitle>
           </div>
           <SheetDescription className="text-[#337875] text-sm">
             {isEditing
-              ? "Update the ticket details below."
-              : "Fill in the details for the new conference ticket."}
+              ? "Update the schedule details below."
+              : "Fill in the details for the new conference schedule."}
           </SheetDescription>
         </SheetHeader>
 
@@ -183,7 +216,7 @@ export function TicketFormDialog({
                 </FieldLabel>
                 <Input
                   {...register("title")}
-                  placeholder="Enter ticket title"
+                  placeholder="Enter schedule title"
                   className="h-10 border-[#e5e5e0] focus:border-[#155E63] focus:ring-[#155E63]/20"
                 />
                 <FieldError>{errors.title?.message}</FieldError>
@@ -209,8 +242,8 @@ export function TicketFormDialog({
                     Start Time <span className="text-red-500">*</span>
                   </FieldLabel>
                   <Input
+                    type="time"
                     {...register("startTime")}
-                    placeholder="e.g., 09:00 AM"
                     className="h-10 border-[#e5e5e0] focus:border-[#155E63] focus:ring-[#155E63]/20"
                   />
                   <FieldError>{errors.startTime?.message}</FieldError>
@@ -221,26 +254,23 @@ export function TicketFormDialog({
                     End Time <span className="text-red-500">*</span>
                   </FieldLabel>
                   <Input
+                    type="time"
                     {...register("endTime")}
-                    placeholder="e.g., 10:30 AM"
                     className="h-10 border-[#e5e5e0] focus:border-[#155E63] focus:ring-[#155E63]/20"
                   />
                   <FieldError>{errors.endTime?.message}</FieldError>
                 </Field>
               </div>
 
-              {/* Duration */}
-              <Field data-invalid={!!errors.duration}>
-                <FieldLabel className="text-[#155E63] text-sm font-medium">
-                  Duration <span className="text-red-500">*</span>
-                </FieldLabel>
-                <Input
-                  {...register("duration")}
-                  placeholder="e.g., 90 MIN"
-                  className="h-10 border-[#e5e5e0] focus:border-[#155E63] focus:ring-[#155E63]/20"
-                />
-                <FieldError>{errors.duration?.message}</FieldError>
-              </Field>
+              {/* Duration Preview */}
+              {calculatedDuration && (
+                <div className="py-2 px-3 bg-[#155E63]/5 rounded-lg border border-[#155E63]/20">
+                  <p className="text-xs text-[#337875]">Calculated Duration</p>
+                  <p className="text-sm font-medium text-[#155E63]">
+                    {calculatedDuration}
+                  </p>
+                </div>
+              )}
 
               {/* Description */}
               <Field data-invalid={!!errors.description}>
@@ -249,7 +279,7 @@ export function TicketFormDialog({
                 </FieldLabel>
                 <Textarea
                   {...register("description")}
-                  placeholder="Enter ticket description..."
+                  placeholder="Enter schedule description..."
                   className="min-h-[100px] border-[#e5e5e0] focus:border-[#155E63] focus:ring-[#155E63]/20 resize-none"
                 />
                 <FieldError>{errors.description?.message}</FieldError>
@@ -281,25 +311,12 @@ export function TicketFormDialog({
                 <FieldError>{errors.focus?.message}</FieldError>
               </Field>
 
-              {/* Link */}
-              <Field data-invalid={!!errors.link}>
-                <FieldLabel className="text-[#155E63] text-sm font-medium">
-                  Link <span className="text-red-500">*</span>
-                </FieldLabel>
-                <Input
-                  {...register("link")}
-                  placeholder="https://example.com/ticket"
-                  className="h-10 border-[#e5e5e0] focus:border-[#155E63] focus:ring-[#155E63]/20"
-                />
-                <FieldError>{errors.link?.message}</FieldError>
-              </Field>
-
               {/* Active Toggle */}
               <div className="flex items-center justify-between py-2 px-3 bg-[#F5F5EE] rounded-lg">
                 <div>
                   <p className="text-sm font-medium text-[#155E63]">Active</p>
                   <p className="text-xs text-[#337875]">
-                    Make this ticket visible on the website
+                    Make this schedule visible on the website
                   </p>
                 </div>
                 <Switch
@@ -330,8 +347,8 @@ export function TicketFormDialog({
               {isSubmitting
                 ? "Saving..."
                 : isEditing
-                  ? "Update Ticket"
-                  : "Create Ticket"}
+                  ? "Update Schedule"
+                  : "Create Schedule"}
             </Button>
           </div>
         </form>

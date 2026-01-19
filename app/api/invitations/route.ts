@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     if (existingUser.length > 0) {
       return NextResponse.json(
         { error: "User with this email already exists" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -50,15 +50,15 @@ export async function POST(request: NextRequest) {
         and(
           eq(invitations.email, email),
           isNull(invitations.usedAt),
-          gt(invitations.expiresAt, new Date())
-        )
+          gt(invitations.expiresAt, new Date()),
+        ),
       )
       .limit(1);
 
     if (existingInvite.length > 0) {
       return NextResponse.json(
         { error: "Invitation already sent to this email" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -81,8 +81,8 @@ export async function POST(request: NextRequest) {
     // Send invitation email
     const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/signup?token=${token}`;
 
-    await resend.emails.send({
-      from: process.env.EMAIL_FROM || "admin@afriquebitcoin.com",
+    const { data: emailData, error: emailError } = await resend.emails.send({
+      from: "admin@azacdev.com",
       to: email,
       subject: "Invitation to Afrique Bitcoin Admin Portal",
       react: InvitationEmail({
@@ -91,6 +91,21 @@ export async function POST(request: NextRequest) {
         expiresAt,
       }),
     });
+
+    // Check if email sending failed
+    if (emailError) {
+      console.error("Resend email error:", emailError);
+
+      // Delete the invitation since email failed
+      await db.delete(invitations).where(eq(invitations.id, invitation.id));
+
+      return NextResponse.json(
+        { error: `Failed to send invitation email: ${emailError.message}` },
+        { status: 500 },
+      );
+    }
+
+    console.log("Invitation email sent successfully:", emailData?.id);
 
     return NextResponse.json({
       message: "Invitation sent successfully",
@@ -104,7 +119,7 @@ export async function POST(request: NextRequest) {
     console.error("Error creating invitation:", error);
     return NextResponse.json(
       { error: "Failed to create invitation" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -159,7 +174,7 @@ export async function GET() {
           createdByName: creator?.name || "Unknown",
           usedByName,
         };
-      })
+      }),
     );
 
     return NextResponse.json({ invitations: invitationsWithNames });
@@ -167,7 +182,7 @@ export async function GET() {
     console.error("Error fetching invitations:", error);
     return NextResponse.json(
       { error: "Failed to fetch invitations" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

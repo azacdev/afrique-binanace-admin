@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Mail, Clock, CheckCircle2 } from "lucide-react";
+import { Plus, Mail, Clock, CheckCircle2, Trash2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -56,6 +56,10 @@ export default function SettingsPage() {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [deleteInvitation, setDeleteInvitation] = useState<Invitation | null>(
+    null,
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const {
     register,
@@ -120,6 +124,30 @@ export default function SettingsPage() {
     return { label: "Pending", color: "bg-yellow-100 text-yellow-800" };
   };
 
+  const handleDelete = async () => {
+    if (!deleteInvitation) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/invitations/${deleteInvitation.id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        toast.success("Invitation deleted successfully");
+        setDeleteInvitation(null);
+        fetchInvitations();
+      } else {
+        toast.error("Failed to delete invitation");
+      }
+    } catch (error) {
+      console.error("Error deleting invitation:", error);
+      toast.error("Failed to delete invitation");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
@@ -163,6 +191,7 @@ export default function SettingsPage() {
                   <TableHead>Expires</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Used By</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -189,6 +218,9 @@ export default function SettingsPage() {
                     <TableCell>
                       <Skeleton className="h-4 w-20" />
                     </TableCell>
+                    <TableCell className="text-right">
+                      <Skeleton className="h-8 w-8 rounded ml-auto" />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -206,6 +238,7 @@ export default function SettingsPage() {
                   <TableHead>Expires</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Used By</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -238,6 +271,16 @@ export default function SettingsPage() {
                         ) : (
                           "-"
                         )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeleteInvitation(invitation)}
+                          className="text-gray-500 hover:text-red-600"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   );
@@ -293,6 +336,40 @@ export default function SettingsPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={!!deleteInvitation}
+        onOpenChange={() => setDeleteInvitation(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600">
+              Delete Invitation
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete the invitation for "
+              {deleteInvitation?.email}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteInvitation(null)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

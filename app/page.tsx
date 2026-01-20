@@ -19,7 +19,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { signIn, useSession } from "@/lib/auth-client";
+import { signIn } from "@/lib/auth-client";
 import {
   Field,
   FieldError,
@@ -39,7 +39,6 @@ export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { data: session } = useSession();
 
   const {
     register,
@@ -52,12 +51,6 @@ export default function SignInPage() {
       password: "",
     },
   });
-
-  // Redirect if already authenticated
-  if (session) {
-    router.push("/dashboard");
-    return null;
-  }
 
   const onSubmit = async (data: SignInForm) => {
     setLoading(true);

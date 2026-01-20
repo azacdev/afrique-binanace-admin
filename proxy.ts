@@ -52,11 +52,23 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Redirect authenticated users from root/sign-up to dashboard
+  // Redirect authenticated users from root/sign-up to dashboard (or callbackURL)
   if (pathname === "/" || pathname.startsWith("/signup")) {
     const authCookie = request.cookies.get(sessionCookieName);
 
     if (authCookie) {
+      // Check for callbackURL parameter
+      const callbackURL = request.nextUrl.searchParams.get("callbackURL");
+      if (callbackURL) {
+        try {
+          // Extract the pathname from the callback URL to avoid external redirects
+          const callbackPath = new URL(callbackURL).pathname;
+          return NextResponse.redirect(new URL(callbackPath, request.url));
+        } catch {
+          // If URL parsing fails, fall back to dashboard
+          return NextResponse.redirect(new URL("/dashboard", request.url));
+        }
+      }
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
@@ -83,6 +95,3 @@ function getAllowedOrigin(request: NextRequest): string {
 export const config = {
   matcher: ["/api/:path*", "/dashboard/:path*", "/", "/signup"],
 };
-
-// Export as middleware for Next.js 16
-export { proxy as middleware };

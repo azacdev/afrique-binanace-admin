@@ -37,13 +37,13 @@ export async function proxy(request: NextRequest) {
   }
 
   // Check for auth cookie presence for dashboard protection
-  // if (pathname.startsWith("/dashboard")) {
-  //   if (!hasSessionCookie(request)) {
-  //     const signInUrl = new URL("/", request.url);
-  //     signInUrl.searchParams.set("callbackURL", request.url);
-  //     return NextResponse.redirect(signInUrl);
-  //   }
-  // }
+  if (pathname.startsWith("/dashboard")) {
+    if (!hasSessionCookie(request)) {
+      const signInUrl = new URL("/", request.url);
+      signInUrl.searchParams.set("callbackURL", request.url);
+      return NextResponse.redirect(signInUrl);
+    }
+  }
 
   // Redirect authenticated users from root/sign-up to dashboard (or callbackURL)
   if (pathname === "/" || pathname.startsWith("/signup")) {

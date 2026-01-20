@@ -1,15 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-// Determine the correct cookie name based on environment
-function getSessionCookieName(): string {
-  const isSecure =
-    process.env.NODE_ENV === "production" ||
-    process.env.VERCEL_URL ||
-    process.env.NEXT_PUBLIC_VERCEL_URL;
-
+// Check for session cookie - try both secure and non-secure variants
+function hasSessionCookie(request: NextRequest): boolean {
   const baseName = "better-auth.session_token";
+  const secureName = `__Secure-${baseName}`;
 
-  return isSecure ? `__Secure-${baseName}` : baseName;
+  // Check for either cookie variant
+  return !!(request.cookies.get(secureName) || request.cookies.get(baseName));
 }
 
 export async function proxy(request: NextRequest) {
@@ -39,13 +36,9 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  const sessionCookieName = getSessionCookieName();
-
   // Check for auth cookie presence for dashboard protection
   if (pathname.startsWith("/dashboard")) {
-    const authCookie = request.cookies.get(sessionCookieName);
-
-    if (!authCookie) {
+    if (!hasSessionCookie(request)) {
       const signInUrl = new URL("/", request.url);
       signInUrl.searchParams.set("callbackURL", request.url);
       return NextResponse.redirect(signInUrl);
@@ -54,9 +47,7 @@ export async function proxy(request: NextRequest) {
 
   // Redirect authenticated users from root/sign-up to dashboard (or callbackURL)
   if (pathname === "/" || pathname.startsWith("/signup")) {
-    const authCookie = request.cookies.get(sessionCookieName);
-
-    if (authCookie) {
+    if (hasSessionCookie(request)) {
       // Check for callbackURL parameter
       const callbackURL = request.nextUrl.searchParams.get("callbackURL");
       if (callbackURL) {

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Eye, EyeOff } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 
@@ -37,6 +38,7 @@ type SignInForm = z.infer<typeof signInSchema>;
 export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const {
     register,
@@ -62,8 +64,7 @@ export default function SignInPage() {
         toast.error(result.error.message || "Failed to sign in");
       } else {
         toast.success("Signed in successfully!");
-        // Use hard navigation so the proxy can intercept with the new session cookie
-        window.location.href = "/dashboard";
+        router.push("/dashboard");
       }
     } catch (error) {
       console.error("Sign in exception:", error);

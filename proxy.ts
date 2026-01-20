@@ -70,6 +70,7 @@ function getAllowedOrigin(request: NextRequest): string {
     "http://localhost:3000",
     "http://localhost:3001",
     "https://afrique-bitcoin.vercel.app",
+    "https://afrique-binanace-admin.vercel.app",
   ];
 
   if (origin && allowedOrigins.includes(origin)) {

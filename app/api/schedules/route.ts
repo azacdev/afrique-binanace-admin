@@ -6,17 +6,8 @@ import { auth } from "@/lib/auth";
 import { db } from "@/db/drizzle";
 import { schedules } from "@/db/schema";
 
-// GET all schedules (protected - admin only)
 export async function GET() {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const allSchedules = await db
       .select()
       .from(schedules)
